@@ -1,7 +1,7 @@
 {
   "name": "telegraf-modern-scenes",
   "description": "Modern wizard scenes for Telegraf v4",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "author": "Degreet <degreetpro@gmail.com>",
