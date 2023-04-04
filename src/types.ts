@@ -2,6 +2,7 @@ import { Context } from 'telegraf';
 
 export type Filter<T extends Context = any> = (ctx: T) => Promise<boolean> | boolean;
 export type ExampleContext = Context & IModernSceneContextFlavor;
+export type Step<T extends Context> = IStep<T> | Filter<T>;
 
 export interface IStep<T extends Context> {
   name?: string;
