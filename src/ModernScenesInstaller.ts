@@ -1,5 +1,5 @@
 import { ModernScene } from './ModernScene';
-import { ExampleContext, IStorage } from './types';
+import { ExampleContext, Filter, IStorage } from './types';
 import { log } from './debug';
 
 export class ModernScenesInstaller<T extends ExampleContext = ExampleContext> {
@@ -20,6 +20,7 @@ export class ModernScenesInstaller<T extends ExampleContext = ExampleContext> {
           const activeScene = this.scenes.find((scene) => scene.name === name);
           if (!activeScene) return;
 
+          storageCell.currentFilter = null;
           storageCell.activeScene = name;
           storageCell.stepIndex = 0;
           storageCell.data = {};
@@ -33,18 +34,20 @@ export class ModernScenesInstaller<T extends ExampleContext = ExampleContext> {
           const storageCell = this.storage[ctx.chat.id.toString()];
           if (!storageCell) return;
 
+          storageCell.currentFilter = null;
           storageCell.activeScene = null;
           storageCell.stepIndex = 0;
           storageCell.data = {};
         },
-        next: () => {
+        next: (filter?: Filter<T>) => {
           log('Next scene step');
 
           if (!ctx.chat) return;
           const storageCell = this.storage[ctx.chat.id.toString()];
           if (storageCell) storageCell.stepIndex++;
+          storageCell.currentFilter = filter || null;
         },
-        skip: (name: string) => {
+        skip: (name: string, filter?: Filter<T> | null, disableAutoEnter?: boolean) => {
           log('Skip scene steps to', name);
 
           if (!ctx.chat) return;
@@ -58,6 +61,14 @@ export class ModernScenesInstaller<T extends ExampleContext = ExampleContext> {
           if (stepIndex < 0) return;
 
           storageCell.stepIndex = stepIndex;
+          storageCell.currentFilter = filter || null;
+
+          const filterFn =
+            storageCell.currentFilter || activeScene.steps[storageCell.stepIndex].filter;
+          if (filterFn && !filterFn(ctx)) return;
+
+          if (!disableAutoEnter)
+            activeScene.steps[storageCell.stepIndex].handler(ctx, storageCell.data);
         },
       };
 
@@ -85,6 +96,9 @@ export class ModernScenesInstaller<T extends ExampleContext = ExampleContext> {
         storageCell.activeScene = null;
         return next();
       }
+
+      const filter = storageCell.currentFilter || activeScene.steps[storageCell.stepIndex].filter;
+      if (filter && !filter(ctx)) return;
 
       activeScene.steps[storageCell.stepIndex].handler(ctx, storageCell.data);
     };
